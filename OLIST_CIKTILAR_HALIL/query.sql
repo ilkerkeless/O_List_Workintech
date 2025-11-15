@@ -1,18 +1,4 @@
-select count(*) from `stone-arch-474621-h4.project_dataset.olist_order_items_dataset`  --112650
-;
-select * from `stone-arch-474621-h4.project_dataset.olist_order_items_dataset`  limit 100;
-
-
-select * from `stone-arch-474621-h4.project_dataset.olist_products_dataset`
- limit 100;
-
-
- select * from `stone-arch-474621-h4.project_dataset.olist_orders_dataset`
- where order_status='delivered';  --96478 sipariş teslim edilmiş
-
-select * from `stone-arch-474621-h4.project_dataset.olist_product_category_name_translation`
- limit 100;
--------------------------------------------------------------------------------------------------------------------------
+s--2.1-----------------------------------------------------------------------------------------------------------------------
  SELECT
   order_status,
   COUNT(order_status) AS tekrar_sayisi
@@ -56,7 +42,7 @@ group by sub1.product_id,sub1.product_category_name_english
 order by total_order_count desc
 limit 10;
 
---1.2-------------------------------------------------------------------------------------------------------
+--2.2-------------------------------------------------------------------------------------------------------
 
 /*
 Ürün ve Satış İçgörüleri:
@@ -71,7 +57,7 @@ group by payment_type order by total_payment desc;
 --Boleto: Çoğunlukla bilet veya Brezilya'da bir ödeme emri.
 --Voucher: Bir hizmete veya değere hak kazandığınızı gösteren kupon, çeki veya rezervasyon belgesi.
 
---1.3---------------------------------------------------------------------------------------------------------
+--2.3---------------------------------------------------------------------------------------------------------
 
 --order id ile product_id ile birleştirip value toplamına bakmam lazım 
 select 
@@ -110,7 +96,7 @@ ON t1.seller_id = t2.seller_id
 )
 as sub;
 
-----------------------------------------------------------------------------------------------------------------
+--4.2-------------------------------------------------------------------------------------------------------------
 
 SELECT
     final.seller_id,
@@ -151,7 +137,7 @@ ORDER BY
     final.items_in_this_category DESC
 LIMIT 50;
 
-
+--4.3-------------------------------------------------------------------------------------------------------------
 --Satıcı ve ürün aktivitelerinde mevsimsel trendler var mı?
 
 
@@ -205,7 +191,7 @@ ORDER BY
     items_sold_in_category DESC;
 
 
----------------------------------------------------------------------------------------------------    
+--6.1-------------------------------------------------------------------------------------------------    
 /*
 Hangi bölgeler veya eyaletler Olist için en fazla geliri sağlıyor?
 Müşteri davranışında bölgesel farklılıklar var mı?
@@ -223,6 +209,8 @@ inner join `stone-arch-474621-h4.project_dataset.olist_orders_dataset` as t3
 on t2.order_id = t3.order_id  -- order status için bagladım
 where t3.order_status='delivered'
 group by seller_state order by total_price desc;
+
+--6.2-------------------------------------------------------------------------------------------------    
 
 --Müşteri davranışında bölgesel farklılıklar var mı?   var
 --
@@ -270,7 +258,7 @@ ORDER BY
     customer_state,
     total_price DESC;
 
-
+---6.3------------------------------------------------------------------------------------------------    
 --Satıcılar ve müşteriler şehirler arasında nasıl dağıtılmaktadır?
 select
 sum(total_orders)
@@ -313,7 +301,7 @@ ORDER BY
 where city_match_status ='Ayni Sehir Icinde' -- 5863
 --where state_match_status ='Ayni Eyalet Icinde' --40756
 --where state_match_status ='Farkli Eyaletler Arasi' --71894
------------------------------------------------------------------------------------
+--8.1---------------------------------------------------------------------------------
 /*
 Dolandırıcılık ve Risk Yönetimi:
 İşlem verilerinde alışılmadık desenler veya anormallikler var mı?
@@ -323,12 +311,7 @@ Belirli bölgeler veya satıcılar daha yüksek riskle ilişkilendiriliyor mu?
 
 
 
---Değer Anormallikleri (Fiyat, Kargo Ücreti, Ağırlık)
-;
-
-
-
-
+--Değer Anormallikleri (Fiyat, Kargo Ücreti)
 SELECT
     t3.order_id,
     t3.price,
@@ -340,20 +323,20 @@ ORDER BY
     price_vs_avg_ratio DESC -- En pahalı siparişler en başta
 LIMIT 10; --- ilk 3 satır 55 katı ortalamanın diyor anormal diyebiliriz
 
-
+---
 SELECT
     t3.order_id,
     t3.price,
     t3.freight_value, -- kargo maliyeti
-    -- Satış fiyatının genel ortalamaya göre ne kadar yüksek olduğunu görmek
+    -- Kargo fiyatının genel ortalamaya göre ne kadar yüksek olduğunu görmek
     (t3.freight_value / AVG(t3.freight_value) OVER ()) AS freight_vs_avg_ratio
 FROM
     `stone-arch-474621-h4.project_dataset.olist_order_items_dataset` AS t3
 ORDER BY
     freight_vs_avg_ratio DESC -- En pahalı kargo maliyeti en başta
 LIMIT 10; --- 
+---
 
---^^ bu siparişler neler detay verebilirim
 SELECT
     t1.order_id,
     t1.order_purchase_timestamp,
@@ -367,6 +350,7 @@ WHERE
 ORDER BY
     delivery_duration_days DESC -- En yavaş teslimatlar en başta
 LIMIT 10;
+
 
 
 --Kategorik Anormallikler 
@@ -389,13 +373,8 @@ LIMIT 10;
 
 
 /*
-
 Aşırı Hacimli Tekil Siparişler (Fiyat Anormalliği):
-
 Bir kişinin tek bir siparişte ortalamanın çok üzerinde harcama yapması. (Genellikle çalınan kartlarla yapılan denemelerdir.)
-
-
-
 */
 
 --Aşırı Hızlı İptal/Onay (Zaman Anormalliği):
@@ -480,7 +459,10 @@ ORDER BY
     price_vs_avg_ratio DESC -- Ortalama siparişe göre en büyük orana sahip olanlar üste çıksın
 LIMIT 10;
 
--------------------------------------------------------------------------------------------------------------
+
+
+
+------------------------10.kısım----MEMNUNİYET ÜZERİNE DÜŞÜNELİM---------------------------------------------------------------------------------
 /* Belirli bölgeler veya satıcılar daha yüksek riskle ilişkilendiriliyor mu?
 Bu sorgu, her bir satıcının toplam sipariş sayısına oranla ne kadar çok siparişi iptal edildiğini hesaplar. Yüksek orana sahip satıcılar, yüksek riskle ilişkilendirilir. 
 */
@@ -506,7 +488,6 @@ LIMIT 10;
 /*Müşteri Eyaletleri Başına İptal Oranı (Geographical Risk)
 Bu sorgu, bir siparişin yapıldığı bölgenin iptal oranını gösterir. Belirli bölgelerdeki müşteriler, diğerlerine göre daha sık siparişlerini iptal ediyor olabilir.
 */
---^^ şu soru sorulabilir iptal edilen 3 sipariş kargo geçikmesi yüzünden mi oldu ? 
 SELECT
     t4.customer_state,
     COUNT(t2.order_id) AS total_orders_from_state,
@@ -822,7 +803,7 @@ LIMIT 100;
 
 --------------------------------------------------------------------
 WITH sub AS (
-    -- 1. CTE: Gerekli verileri birleştirir ve satır bazında answer_time_day hesaplar
+    
     SELECT 
         t2.price,
         t2.freight_value,
